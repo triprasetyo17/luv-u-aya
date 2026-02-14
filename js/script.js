@@ -5,12 +5,17 @@ const config = {
     musicVolume: 0.5
 };
 
+// Gunakan satu instance audio agar tidak bentrok
+let globalAudio = new Audio(config.musicFile);
+globalAudio.loop = true;
+globalAudio.volume = config.musicVolume;
+
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inisialisasi musik segera setelah halaman dimuat
-    initMusic();
-    
     updateName();
     createFloatingElements(); 
+    
+    // Inisialisasi Musik
+    initMusicSystem();
     
     // Page Logic
     const path = window.location.pathname;
@@ -18,74 +23,83 @@ document.addEventListener('DOMContentLoaded', () => {
     if (path.includes('question.html')) initQuestionPage();
 });
 
-/* --- MUSIC SYSTEM (FORCE RESUME) --- */
-function initMusic() {
+function initMusicSystem() {
     const musicBtn = document.getElementById('music-btn');
     
-    // Gunakan satu instance audio global di memori halaman
-    if (!window.audioContext) {
-        window.audioContext = new Audio(config.musicFile);
-        window.audioContext.loop = true;
-        window.audioContext.volume = config.musicVolume;
-    }
+    // Ambil data dari storage
+    const isPlaying = localStorage.getItem('musicPlaying') === 'true';
+    const savedTime = parseFloat(localStorage.getItem('musicTime')) || 0;
     
-    const audio = window.audioContext;
+    globalAudio.currentTime = savedTime;
 
-    // Ambil posisi waktu terakhir agar lagu "melanjutkan", bukan mengulang
-    const currentTime = parseFloat(localStorage.getItem('musicTime')) || 0;
-    audio.currentTime = currentTime;
-
-    // Fungsi untuk mencoba memutar musik
-    const attemptPlay = () => {
-        audio.play().then(() => {
-            if(musicBtn) musicBtn.innerHTML = '🔊';
+    // Fungsi untuk memutar musik
+    const playAudio = () => {
+        globalAudio.play().then(() => {
             localStorage.setItem('musicPlaying', 'true');
-        }).catch(() => {
-            // Jika autoplay diblokir, kita tunggu interaksi pertama user di layar
-            console.log("Autoplay ditunda: Menunggu interaksi user...");
-        });
+            if (musicBtn) musicBtn.innerHTML = '🔊';
+        }).catch(err => console.log("Menunggu interaksi user untuk navigasi..."));
     };
 
-    // Jalankan attemptPlay segera
-    attemptPlay();
+    // LOGIKA UTAMA: Jika statusnya harusnya 'playing', coba putar.
+    if (isPlaying) {
+        playAudio();
+    }
 
-    // LOGIKA KRUSIAL: Jika browser memblokir autoplay di index.html, 
-    // lagu akan otomatis nyala begitu user klik/sentuh APAPUN di halaman.
-    document.addEventListener('click', attemptPlay, { once: true });
-    document.addEventListener('touchstart', attemptPlay, { once: true });
-
-    // Simpan posisi detik lagu setiap 100ms agar perpindahan antar page terasa seamless
-    setInterval(() => {
-        if (!audio.paused) {
-            localStorage.setItem('musicTime', audio.currentTime);
+    // LISTENER INTERAKSI (Solusi untuk Chrome/Safari/Mozilla/Edge)
+    // Setiap kali user klik APAPUN pertama kali, audio akan dipaksa jalan
+    const forcePlay = () => {
+        if (localStorage.getItem('musicPlaying') === 'true') {
+            playAudio();
         }
-    }, 100);
+        document.removeEventListener('click', forcePlay);
+        document.removeEventListener('touchstart', forcePlay);
+    };
+    document.addEventListener('click', forcePlay);
+    document.addEventListener('touchstart', forcePlay);
 
-    // Kontrol manual tombol speaker
+    // Simpan posisi lagu secara berkala (setiap 500ms agar lebih akurat)
+    setInterval(() => {
+        if (!globalAudio.paused) {
+            localStorage.setItem('musicTime', globalAudio.currentTime);
+        }
+    }, 500);
+
+    // Kontrol tombol manual
     if (musicBtn) {
         musicBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Biar gak bentrok sama listener document
-            if (audio.paused) {
-                audio.play();
-                musicBtn.innerHTML = '🔊';
+            e.preventDefault();
+            if (globalAudio.paused) {
+                globalAudio.play();
                 localStorage.setItem('musicPlaying', 'true');
+                musicBtn.innerHTML = '🔊';
             } else {
-                audio.pause();
-                musicBtn.innerHTML = '🔇';
+                globalAudio.pause();
                 localStorage.setItem('musicPlaying', 'false');
+                musicBtn.innerHTML = '🔇';
             }
         });
     }
 }
 
-/* --- DYNAMIC NAME --- */
+/* --- NAVIGASI KHUSUS (Tambahkan ini agar saat pindah page audio dipicu) --- */
+// Kita cari semua link/tombol yang pindah halaman
+document.addEventListener('click', (e) => {
+    const target = e.target.closest('a');
+    if (target && target.classList.contains('btn-gold')) {
+        // Sebelum pindah halaman, pastikan audio ditandai harus menyala
+        localStorage.setItem('musicPlaying', 'true');
+        // Browser mengizinkan play() tepat saat klik tombol navigasi
+        globalAudio.play(); 
+    }
+});
+
+/* --- FUNGSI LAINNYA (TETAP SAMA) --- */
 function updateName() {
     document.querySelectorAll('.partner-name').forEach(el => {
         el.textContent = config.partnerName;
     });
 }
 
-/* --- FIXED FLOATING HEARTS --- */
 function createFloatingElements() {
     const container = document.getElementById('particles') || document.body;
     setInterval(() => {
@@ -100,7 +114,6 @@ function createFloatingElements() {
     }, 600); 
 }
 
-/* --- QUESTION PAGE LOGIC --- */
 function initQuestionPage() {
     const btnNo = document.getElementById('btn-no');
     if (!btnNo) return;
@@ -113,9 +126,9 @@ function initQuestionPage() {
         btnNo.style.top = `${Math.random() * maxY}px`;
     };
     btnNo.addEventListener('mouseover', moveBtn);
+    btnNo.addEventListener('touchstart', moveBtn);
 }
 
-/* --- TYPING EFFECT --- */
 function initTypingEffect() {
     const textElement = document.getElementById('typing-text');
     if (!textElement) return;
