@@ -1,0 +1,156 @@
+/* --- LUXURY THEME VARIABLES --- */
+:root {
+    --bg-dark: #1a0b0b;
+    --gold: #d4af37;
+    --gold-gradient: linear-gradient(135deg, #d4af37, #f3e5ab, #d4af37);
+    --glass-bg: rgba(255, 255, 255, 0.08); /* Sedikit lebih terang */
+    --glass-border: rgba(212, 175, 55, 0.3); /* Border gold tipis */
+    --text-main: #ffffff;
+    --red-accent: #8e0e00;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-main);
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden; /* KUNCI UTAMA: Mencegah scrollbar goyang */
+    background-color: var(--bg-dark); /* Fallback color */
+    position: relative;
+}
+
+/* --- 1. LAYER BACKGROUND (FIXED & ISOLATED) --- */
+.fixed-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -10; /* Paling belakang */
+    background: linear-gradient(125deg, #2c0000, #1a0b0b, #3d0000);
+    background-size: 400% 400%;
+    animation: gradientFlow 15s ease infinite;
+}
+
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- 2. LAYER PARTICLES (FLOATING HEARTS) --- */
+.particles-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -5;
+    pointer-events: none; /* Agar tidak menghalangi klik */
+    overflow: hidden;
+}
+
+.heart {
+    position: absolute;
+    color: var(--red-accent);
+    bottom: -50px; /* Mulai dari bawah layar */
+    animation: floatUp linear forwards;
+    opacity: 0;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { opacity: 0.8; }
+    100% { transform: translateY(-120vh) scale(1.2) rotate(360deg); opacity: 0; }
+}
+
+/* --- 3. LAYER CONTENT (CENTERING) --- */
+.content-wrapper {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    padding: 20px;
+}
+
+/* --- GLASS CARD --- */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    padding: 3rem 2rem;
+    border-radius: 24px;
+    width: 100%; max-width: 480px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    /* Animasi Masuk Card */
+    opacity: 0;
+    transform: scale(0.9);
+    animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes cardEntrance {
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* --- TYPOGRAPHY & COMPONENTS --- */
+h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+.luxury-title {
+    font-size: 2.5rem;
+    background: var(--gold-gradient);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1.5rem;
+    filter: drop-shadow(0 0 10px rgba(212,175,55,0.2));
+}
+
+.btn-gold {
+    display: inline-block;
+    padding: 14px 40px;
+    margin-top: 25px;
+    background: var(--gold-gradient);
+    border: none;
+    border-radius: 50px;
+    color: #2c0000;
+    font-weight: 700;
+    text-decoration: none;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+.btn-gold:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(212, 175, 55, 0.5);
+}
+
+/* Gallery Grid */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+}
+.gallery-item {
+    width: 100%; height: 140px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Music Control */
+.music-control {
+    position: fixed; bottom: 20px; right: 20px;
+    width: 45px; height: 45px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    color: var(--gold);
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; z-index: 100;
+    font-size: 1.2rem;
+}
